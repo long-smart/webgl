@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            list-style-type: none;
+        }
+        body {
+            text-align: center;
+        }
+        canvas {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <canvas width="1000" height="400" id="canvas"></canvas>
+
+    <!-- 顶点着色器源码 -->
+	<script type="shader-source" id="vertexShader">
+        // 设置浮点数精度为 float
+        precision mediump float;
+        // 接收在 canvas坐标系上的坐标 (x, y)
+        attribute vec2 a_Position;
+        // 接收 canvas的宽高尺寸
+        attribute vec2 a_Screen_size;
+        void main(){
+            // start 将屏幕坐标系转化为裁剪坐标系
+            vec2 position = (a_Position / a_Screen_size) * 2.0 - 1.0;
+            position = position * vec2(1.0, -1.0);
+            gl_Position = vec4(position, 0, 1);
+            // end 将屏幕坐标系转化为裁剪坐标
+
+            // 声明要绘制点的大小
+            gl_PointSize = 10.0;
+        }
+       </script>
+       
+       <!-- 片元着色器源码 -->
+       <script type="shader-source" id="fragmentShader">
+            precision mediump float;
+            // uniform 全局变量
+            // 接收 js传过来的颜色值
+            uniform vec4 u_Color;
+
+            void main(){
+                // 将普通的颜色表示转化为 webgl通用的表达方式, 即将[0-255] 转化为[0, 1]之间
+                vec4 color = u_Color / vec4(255, 255, 255, 1);
+                gl_FragColor = color;
+            }
+
+            // attribue 变量：只能在顶点着色器中定义。
+            // uniform 变量：既可以在顶点着色器中定义，也可以在片元着色器中定义。最后一种变量类型 varing 变量：它用来从顶点着色器中往片元着色器传递数据。使用它我们可以在顶点着色器中声明一个变量并对其赋值，经过插值处理后，在片元着色器中取出插值后/ 的值来使用。
+       </script>
+       
+       
+    <script>
+        var canvas = document.querySelector('#canvas');
+        var gl = canvas.getContext('webgl')
+
+        var random = Math.random;
+        function randomColor() {
+            return {
+                r: random() * 255,
+                g: random() * 255,
+                b: random() * 255,
+                a: random() * 1
+            };
+        }
+
+        function createShaderFromScript(gl, mode, className) {
+            // 获取顶点着色器源码
+            var ShaderSource = document.querySelector(className).innerHTML;
+            // 创建顶点着色器对象
+            var Shader = gl.createShader(mode);
+            // 将源码分配给顶点着色器对象
+            gl.shaderSource(Shader, ShaderSource);
+            // 编译顶点着色器程序
+            gl.compileShader(Shader);
+            return Shader
+        }
+
+        
+        
+        const vertexShader =  createShaderFromScript(gl, gl.VERTEX_SHADER, '#vertexShader')
+        const fragmentShader = createShaderFromScript(gl, gl.FRAGMENT_SHADER, '#fragmentShader')
+
+        //创建着色器程序
+        const program = gl.createProgram();
+        //将顶点着色器挂载在着色器程序上。
+        gl.attachShader(program, vertexShader); 
+        //将片元着色器挂载在着色器程序上。
+        gl.attachShader(program, fragmentShader);
+        //链接着色器程序
+        gl.linkProgram(program);
+
+        // 使用刚创建好的着色器程序。
+        gl.useProgram(program);
+
+
+        const a_Position = gl.getAttribLocation(program, 'a_Position')
+        const a_Screen_size = gl.getAttribLocation(program, 'a_Screen_size')
+        const u_Color = gl.getUniformLocation(program, 'u_Color')
+
+        gl.vertexAttrib2f(a_Screen_size, canvas.width, canvas.height)
+
+        const points = []
+
+        canvas.addEventListener('click', e => {
+            let x = e.offsetX
+            let y = e.offsetY
+            let color = randomColor()
+            points.push({ x, y, color })
+            
+            //设置清空画布颜色为黑色。
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            //用上一步设置的清空画布颜色清空画布。
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            for (let i = 0; i< points.length; i++) {
+                let color = points[i].color
+                gl.uniform4f(u_Color, color.r, color.g, color.b, color.a)
+                gl.vertexAttrib2f(a_Position, points[i].x, points[i].y)
+                gl.drawArrays(gl.POINTS, 0, 1)
+            }
+        })
+
+        //设置清空画布颜色为黑色。
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+        //用上一步设置的清空画布颜色清空画布。
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+    </script>
+</body>
+</html>

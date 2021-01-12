@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+            list-style-type: none;
+        }
+        body {
+            text-align: center;
+        }
+        canvas {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <canvas width="1000" height="400" id="canvas"></canvas>
+
+    <!-- 顶点着色器源码 -->
+	<script type="shader-source" id="vertexShader">
+        void main(){
+            // 声明顶点位置
+            gl_Position = vec4(0.0, 0.0, 0.0, 1.0);
+            // 声明要绘制的点的大小。
+            gl_PointSize = 10.0;
+        }
+    </script>
+       
+    <!-- 片元着色器源码 -->
+    <script type="shader-source" id="fragmentShader">
+        void main(){
+            //设置像素颜色为红色
+           gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); 
+        }
+    </script>
+       
+       
+    <script>
+        var canvas = document.querySelector('#canvas');
+        var gl = canvas.getContext('webgl')
+
+        function createShaderFromScript(gl, mode, className) {
+            // 获取顶点着色器源码
+            var ShaderSource = document.querySelector(className).innerHTML;
+            // 创建顶点着色器对象
+            var Shader = gl.createShader(mode);
+            // 将源码分配给顶点着色器对象
+            gl.shaderSource(Shader, ShaderSource);
+            // 编译顶点着色器程序
+            gl.compileShader(Shader);
+            return Shader
+        }
+
+        
+        
+        const vertexShader =  createShaderFromScript(gl, gl.VERTEX_SHADER, '#vertexShader')
+        const fragmentShader = createShaderFromScript(gl, gl.FRAGMENT_SHADER, '#fragmentShader')
+
+
+        //创建着色器程序
+        var program = gl.createProgram();
+        //将顶点着色器挂载在着色器程序上。
+        gl.attachShader(program, vertexShader); 
+        //将片元着色器挂载在着色器程序上。
+        gl.attachShader(program, fragmentShader);
+        //链接着色器程序
+        gl.linkProgram(program);
+
+        // 使用刚创建好的着色器程序。
+        gl.useProgram(program);
+
+
+        //设置清空画布颜色为黑色。
+        gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+        //用上一步设置的清空画布颜色清空画布。
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        //绘制点。
+        gl.drawArrays(gl.POINTS, 0, 1);
+    </script>
+</body>
+</html>
